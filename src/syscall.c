@@ -2,14 +2,23 @@
 #include "peb.h"
 #include "syscall.h"
 
+
 void* _syscall_build_stub(DWORD syscall_number) {
+	
+
+	// Values XORed with 0xFF (original stub bytes obfuscated)
 	unsigned char syscall_stub[] = {
-		0x4C, 0x8B, 0xD1,             // mov r10, rcx
-		0xB8, 0, 0, 0, 0,             // mov eax, syscall_number
-		0x0F, 0x05,                   // syscall
-		0xC3                          // ret
+		0xB3, 0x74, 0x2E,             // mov r10, rcx
+		0x47, 0xFF, 0xFF, 0xFF, 0xFF, // mov eax, syscall_number 
+		0xF0, 0xFA,                   // syscall 
+		0x3C                          // ret 
 	};
 
+	//Decode stub
+	for(int i = 0; i < 11; i++)
+		syscall_stub[i] = 0xFF ^ syscall_stub[i] ; 
+	//--
+	
 	//Avoiding RWX memory allocation
 	void* mem = VirtualAlloc(
 		NULL,
@@ -34,8 +43,15 @@ DWORD _syscall_get_number(void* func)
 {
     BYTE* p = (BYTE*)func;
 
+	//Decode {0x4C, 0x8B, 0xD1, 0xB8} pattern
+	BYTE pattern[4] = {0xB3, 0x74, 0x2E, 0x47};
+	
+	for(int i = 0; i < 4; i++)
+		pattern[i] = 0xFF ^ pattern[i] ; 
+	//--
+	
     // Check base pattern
-    if (p[0] != 0x4C || p[1] != 0x8B || p[2] != 0xD1)
+    if (p[0] != pattern[1] || p[1] != pattern[1] || p[2] != pattern[1])
         return 0;
 
     if (p[3] != 0xB8)
@@ -94,12 +110,20 @@ void* syscall_resolve_stub_hash(DWORD funcHash)
 	//---
 	
     BYTE* p = (BYTE*)func;
-	   
+	
+	//Decode {0x4C, 0x8B, 0xD1, 0xB8} pattern
+	BYTE pattern[4] = {0xB3, 0x74, 0x2E, 0x47};
+	
+	int i;
+	for(i = 0; i < 4; i++)
+		pattern[i] = 0xFF ^ pattern[i] ; 
+	//--
+	
 	for (int i = 0; i < 64; i++){
-		if (p[i]     == 0x4C &&
-			p[i + 1] == 0x8B &&
-			p[i + 2] == 0xD1 &&		//mov r10, rcx
-			p[i + 3] == 0xB8)		//mov eax, syscall_number
+		if (p[i]     == pattern[0] &&	//0x4C
+			p[i + 1] == pattern[1] &&	//0x8B
+			p[i + 2] == pattern[2] &&	//0xD1 (mov r10, rcx)
+			p[i + 3] == pattern[3])		//0xB8 (mov eax, syscall_number)
 		{
 			//Searching for "syscall" instruction
 			for (int j = i + 4; j < i + 32; j++){
