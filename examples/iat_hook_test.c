@@ -1,4 +1,3 @@
-#include <windows.h>
 #include "pe.h"
 #include "hook.h"
 

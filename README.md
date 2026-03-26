@@ -29,6 +29,7 @@ tackle provides a set of minimal primitives for working with Windows internals, 
 * PEB walking (module and API resolution)
 * API lookup via hashing (ROR13)
 * Direct syscalls (dynamic resolution via ntdll exports and runtime-generated stubs)
+* Indirect syscall
 
 ## Future
 

@@ -1,14 +1,11 @@
-#include "syscall.h"
 #include <stdio.h>
-#include <windows.h>
+#include "syscall.h"
 
 //--------------------------------------------------
 // ROR13 HASHES
 //--------------------------------------------------
 #define HASH_NtAllocateVirtualMemory 0xD33BCD4F
 
-
-typedef LONG NTSTATUS;
 //--------------------------------------------------
 // Original NtAllocateVirtualMemory definition
 //--------------------------------------------------
